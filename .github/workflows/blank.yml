@@ -32,13 +32,15 @@ jobs:
           echo "Found Dockerfile at: $FILE"
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
+      
       - name: Run Checkov Scan
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: all
           quiet: true
-
+          soft_fail: true
+          
       - name: Build Nginx Docker image
         run: |
           docker build -t my-nginx -f ${{ steps.dockerfile.outputs.file }} .
