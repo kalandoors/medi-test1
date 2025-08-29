@@ -7,9 +7,8 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# ✅ Explicitly scoped permissions (fixes CKV2_GHA_1)
 permissions:
-  contents: read   # Only allow read access to repository contents
+  contents: read   # Fix for CKV2_GHA_1
 
 jobs:
   build:
@@ -17,6 +16,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # Debug: list repo structure
+      - name: List repo files
+        run: ls -R
+
+      - name: Find Dockerfile
+        id: dockerfile
+        run: |
+          # Try to locate a Dockerfile in repo
+          FILE=$(find . -type f -iname "Dockerfile*" | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "❌ No Dockerfile found!" && exit 1
+          fi
+          echo "Found Dockerfile at: $FILE"
+          echo "file=$FILE" >> $GITHUB_OUTPUT
 
       - name: Run Checkov Scan
         uses: bridgecrewio/checkov-action@v12
@@ -27,7 +41,7 @@ jobs:
 
       - name: Build Nginx Docker image
         run: |
-          docker build -t my-nginx .
+          docker build -t my-nginx -f ${{ steps.dockerfile.outputs.file }} .
 
       - name: Run Nginx container
         run: |
