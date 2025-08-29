@@ -7,35 +7,34 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+# ✅ Explicitly scoped permissions (fixes CKV2_GHA_1)
+permissions:
+  contents: read   # Only allow read access to repository contents
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
       - uses: actions/checkout@v4
 
-      # Run Checkov to scan IaC / Dockerfile / configs
       - name: Run Checkov Scan
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
-          framework: all  # scans Terraform, K8s, Dockerfile, CloudFormation etc.
+          framework: all
           quiet: true
 
-      # Build Docker image for Nginx webserver
       - name: Build Nginx Docker image
         run: |
           docker build -t my-nginx .
 
-      # Run container (detached) and check it responds
       - name: Run Nginx container
         run: |
           docker run -d -p 8080:80 --name nginx_test my-nginx
           sleep 5
           curl -f http://localhost:8080 || (docker logs nginx_test && exit 1)
 
-      # Stop and cleanup container
       - name: Cleanup
         run: |
           docker stop nginx_test
